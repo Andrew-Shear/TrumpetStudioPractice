@@ -48,6 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set initial volume
     audioPlayer.volume = 0.8;
     
+    // Hide volume slider on iOS (volume control not supported)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+        document.querySelector('.volume-control').classList.add('hidden-ios');
+    }
+    
     loadNewSong();
 });
 
@@ -355,9 +361,6 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         return;
     }
     
-    // Set the target time
-    audioPlayer.currentTime = targetTime;
-    
     let seekHandled = false;
     
     const onSeeked = () => {
@@ -386,6 +389,9 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         startSnippetTimer(durationMs);
     };
     
+    // Attach listener BEFORE setting currentTime to avoid race condition
+    audioPlayer.addEventListener('seeked', onSeeked, { once: true });
+    
     // Timeout fallback
     const seekTimeout = setTimeout(() => {
         if (seekHandled) return;
@@ -409,7 +415,8 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         }
     }, 500);
     
-    audioPlayer.addEventListener('seeked', onSeeked, { once: true });
+    // Set the target time AFTER attaching the listener
+    audioPlayer.currentTime = targetTime;
 }
 
 // Workaround seek for problematic files - try seeking to an early position first

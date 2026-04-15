@@ -30,8 +30,7 @@ header {
 
 header h1 {
     font-size: 1.8rem;
-    color: #ffd700;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: #e2e8f0;
 }
 
 .audio-section {
@@ -49,6 +48,10 @@ header h1 {
     color: #aaa;
 }
 
+.volume-control.hidden-ios {
+    display: none;
+}
+
 .volume-control input[type="range"] {
     width: 150px;
     cursor: pointer;
@@ -64,20 +67,18 @@ header h1 {
 }
 
 .play-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     color: white;
     border: none;
     padding: 1rem 2rem;
     font-size: 1.2rem;
-    border-radius: 50px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: background 0.2s;
 }
 
 .play-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    background: #5a6fd6;
 }
 
 .play-btn:disabled {
