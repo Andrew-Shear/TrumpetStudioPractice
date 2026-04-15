@@ -9,7 +9,8 @@ let gameState = {
     snippetTimeout: null,
     timerInterval: null,
     currentStartTime: 0,
-    snippetFinished: false
+    snippetFinished: false,
+    inputMode: 'multiple-choice' // 'multiple-choice' or 'text'
 };
 
 // Track problematic files that don't seek properly
@@ -23,6 +24,10 @@ const volumeSlider = document.getElementById('volumeSlider');
 const volumeValue = document.getElementById('volumeValue');
 const skipBtn = document.getElementById('skipBtn');
 const optionsContainer = document.getElementById('optionsContainer');
+const textInputContainer = document.getElementById('textInputContainer');
+const answerInput = document.getElementById('answerInput');
+const submitBtn = document.getElementById('submitBtn');
+const modeToggle = document.getElementById('modeToggle');
 const feedback = document.getElementById('feedback');
 const feedbackText = document.getElementById('feedbackText');
 const nextBtn = document.getElementById('nextBtn');
@@ -52,6 +57,144 @@ volumeSlider.addEventListener('input', () => {
     audioPlayer.volume = volume;
     volumeValue.textContent = `${volumeSlider.value}%`;
 });
+
+// Mode toggle
+modeToggle.addEventListener('click', () => {
+    if (gameState.inputMode === 'multiple-choice') {
+        gameState.inputMode = 'text';
+        modeToggle.textContent = 'Switch to Multiple Choice';
+        optionsContainer.classList.add('hidden');
+        textInputContainer.classList.remove('hidden');
+        answerInput.value = '';
+        answerInput.focus();
+    } else {
+        gameState.inputMode = 'multiple-choice';
+        modeToggle.textContent = 'Switch to Text Input';
+        optionsContainer.classList.remove('hidden');
+        textInputContainer.classList.add('hidden');
+    }
+});
+
+// Text input submit
+submitBtn.addEventListener('click', handleTextSubmit);
+answerInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        handleTextSubmit();
+    }
+});
+
+// Fuzzy string matching - calculates edit distance
+function levenshteinDistance(str1, str2) {
+    const m = str1.length;
+    const n = str2.length;
+    const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+    
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (str1[i - 1] === str2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
+            } else {
+                dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,     // deletion
+                    dp[i][j - 1] + 1,     // insertion
+                    dp[i - 1][j - 1] + 1  // substitution
+                );
+            }
+        }
+    }
+    return dp[m][n];
+}
+
+// Check if answer is correct using fuzzy matching
+function checkAnswerFuzzy(userAnswer, correctAnswer) {
+    // Normalize both strings: lowercase, trim whitespace, remove extra spaces
+    const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    const normalizedUser = normalize(userAnswer);
+    const normalizedCorrect = normalize(correctAnswer);
+    
+    // Exact match after normalization
+    if (normalizedUser === normalizedCorrect) {
+        return { correct: true, match: correctAnswer };
+    }
+    
+    // Check against all song titles for closest match
+    let bestMatch = null;
+    let bestDistance = Infinity;
+    
+    for (const song of SONGS) {
+        const normalizedSong = normalize(song.title);
+        const distance = levenshteinDistance(normalizedUser, normalizedSong);
+        const maxLength = Math.max(normalizedUser.length, normalizedSong.length);
+        const similarity = 1 - (distance / maxLength);
+        
+        // If similarity is > 80%, consider it a match
+        if (similarity > 0.8 && distance < bestDistance) {
+            bestDistance = distance;
+            bestMatch = song;
+        }
+    }
+    
+    if (bestMatch) {
+        const isCorrect = bestMatch.id === gameState.currentSong.id;
+        return { correct: isCorrect, match: bestMatch.title, guessedSong: bestMatch };
+    }
+    
+    return { correct: false, match: null };
+}
+
+// Handle text input submission
+function handleTextSubmit() {
+    const userAnswer = answerInput.value.trim();
+    if (!userAnswer) return;
+    
+    const result = checkAnswerFuzzy(userAnswer, gameState.currentSong.title);
+    
+    if (result.correct) {
+        handleGuess(gameState.currentSong);
+    } else {
+        // Wrong answer - show what they typed vs correct answer
+        if (result.guessedSong) {
+            // They matched a different song
+            handleGuess(result.guessedSong);
+        } else {
+            // No close match found - treat as wrong with current song
+            handleTextWrong(userAnswer);
+        }
+    }
+}
+
+// Handle wrong text answer
+function handleTextWrong(userAnswer) {
+    if (gameState.isPlaying) {
+        audioPlayer.pause();
+        clearTimeout(gameState.snippetTimeout);
+        clearInterval(gameState.timerInterval);
+        gameState.isPlaying = false;
+    }
+    
+    // Reset snippet state for next song
+    gameState.currentStartTime = 0;
+    gameState.snippetFinished = false;
+    
+    // Disable input
+    answerInput.disabled = true;
+    submitBtn.disabled = true;
+    skipBtn.disabled = true;
+    playBtn.disabled = true;
+    playBtn.textContent = 'Play Snippet';
+    
+    // Update stats
+    gameState.streak = 0;
+    gameState.wrongCount++;
+    updateStats();
+    
+    showFeedback('wrong', `Wrong! You typed "${userAnswer}". The answer was: ${gameState.currentSong.title}`);
+    nextBtn.classList.remove('hidden');
+}
 
 // Load a new random song
 function loadNewSong() {
@@ -92,6 +235,15 @@ function loadNewSong() {
 
     generateOptions();
     hideFeedback();
+    
+    // Reset text input
+    if (answerInput) {
+        answerInput.value = '';
+        answerInput.disabled = false;
+    }
+    if (submitBtn) {
+        submitBtn.disabled = false;
+    }
     
     // Enable buttons
     skipBtn.disabled = false;

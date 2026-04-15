@@ -94,7 +94,86 @@ header h1 {
 
 .skip-section {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+}
+
+.mode-toggle {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.mode-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #eee;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.text-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.text-input-container.hidden {
+    display: none;
+}
+
+#answerInput {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #eee;
+    text-align: center;
+}
+
+#answerInput::placeholder {
+    color: #888;
+}
+
+#answerInput:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+#answerInput:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.submit-btn:disabled {
+    background: #444;
+    cursor: not-allowed;
 }
 
 .skip-btn {
@@ -131,6 +210,10 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 0.8rem;
+}
+
+.options-container.hidden {
+    display: none;
 }
 
 .option-btn {

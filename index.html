@@ -26,10 +26,18 @@
                 <button id="skipBtn" class="skip-btn">Skip</button>
             </div>
 
+            <div class="mode-toggle">
+                <button id="modeToggle" class="mode-btn">Switch to Text Input</button>
+            </div>
+
             <div class="question-section">
                 <h2>Which song is this?</h2>
                 <div id="optionsContainer" class="options-container">
                     <!-- Options will be generated here -->
+                </div>
+                <div id="textInputContainer" class="text-input-container hidden">
+                    <input type="text" id="answerInput" placeholder="Type the song name..." autocomplete="off">
+                    <button id="submitBtn" class="submit-btn">Submit</button>
                 </div>
             </div>
 
