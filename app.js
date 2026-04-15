@@ -1,9 +1,3 @@
-// Andrew Shear ashear@vt.edu
-// 04/15/26
-//
-// As a Hokie, I will conduct myself with honor and integrity at all times. I will not lie, cheat, or steal, nor will I accept the actions of those who do.
-// During the preparation of this assignment, I used Kimi-K2.5 in every file to plan, draft, iterate, test, and debug. After using this tool, I reviewed and edited the content as needed to ensure its accuracy and take full responsibility for the content in relation to grading.
-
 // Game State
 let gameState = {
     currentSong: null,
