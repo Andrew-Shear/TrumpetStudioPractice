@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<!--
+Andrew Shear ashear@vt.edu
+04/15/26
+
+As a Hokie, I will conduct myself with honor and integrity at all times. I will not lie, cheat, or steal, nor will I accept the actions of those who do.
+During the preparation of this assignment, I used Kimi-K2.5 in every file to plan, draft, iterate, test, and debug. After using this tool, I reviewed and edited the content as needed to ensure its accuracy and take full responsibility for the content in relation to grading.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trumpet Studio Practice Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Trumpet Studio Practice Tool</h1>
+        </header>
+
+        <main>
+            <div class="audio-section">
+                <button id="playBtn" class="play-btn">Play Snippet</button>
+                <div class="volume-control">
+                    <label for="volumeSlider">Volume:</label>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="80">
+                    <span id="volumeValue">80%</span>
+                </div>
+            </div>
+
+            <div class="skip-section">
+                <button id="skipBtn" class="skip-btn">Skip</button>
+            </div>
+
+            <div class="question-section">
+                <h2>Which song is this?</h2>
+                <div id="optionsContainer" class="options-container">
+                    <!-- Options will be generated here -->
+                </div>
+            </div>
+
+            <div id="feedback" class="feedback hidden">
+                <div id="feedbackText"></div>
+                <button id="nextBtn" class="next-btn hidden">Next Song</button>
+            </div>
+        </main>
+
+        <footer>
+            <div class="stats">
+                <span class="streak">Streak: <span id="streakCount">0</span></span>
+                <span class="correct">Correct: <span id="correctCount">0</span></span>
+                <span class="wrong">Wrong: <span id="wrongCount">0</span></span>
+            </div>
+        </footer>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script src="songs.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
