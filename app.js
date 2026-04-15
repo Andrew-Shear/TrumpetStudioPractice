@@ -132,7 +132,7 @@ function checkAnswerFuzzy(userAnswer, correctAnswer) {
         const similarity = 1 - (distance / maxLength);
         
         // If similarity is > 80%, consider it a match
-        if (similarity > 0.8 && distance < bestDistance) {
+        if (similarity > 0.9 && distance < bestDistance) {
             bestDistance = distance;
             bestMatch = song;
         }
