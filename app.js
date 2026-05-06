@@ -253,7 +253,7 @@ function loadNewSong() {
     
     // Reset audio
     audioPlayer.pause();
-    audioPlayer.src = `/data/audio/${gameState.currentSong.filename}`;
+    audioPlayer.src = `data/audio/${gameState.currentSong.filename}`;
     audioPlayer.currentTime = 0;
     
     // Log when audio is ready
