@@ -103,7 +103,82 @@ header h1 {
     margin-bottom: 1.5rem;
 }
 
+/* Container to place mode toggle and category selector side‑by‑side */
+.controls-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Remove inner margins when inside controls-row */
+.controls-row .mode-toggle,
+.controls-row .category-selector {
+    margin-bottom: 0;
+}
+
 .mode-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #eee;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.category-selector {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.category-selector label {
+    margin-right: 0.5rem;
+    color: #aaa;
+}
+
+.category-select {
+    padding: 0.6rem 1rem;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    color: #eee;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 140px;
+}
+
+.category-select:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.category-select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.category-select:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    cursor: not-allowed;
+}
+
+.category-select option {
+    background: #1a1a2e;
+    color: #eee;
+    padding: 0.5rem;
+}
+
+.text-input-container {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: #eee;

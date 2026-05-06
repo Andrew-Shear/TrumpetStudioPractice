@@ -1,6 +1,7 @@
 // Game State
 let gameState = {
     currentSong: null,
+    currentAnswer: null,
     streak: 0,
     correctCount: 0,
     wrongCount: 0,
@@ -10,11 +11,9 @@ let gameState = {
     timerInterval: null,
     currentStartTime: 0,
     snippetFinished: false,
+    inputCategory: 'title', // 'title' or 'composer' or 'performer'
     inputMode: 'multiple-choice' // 'multiple-choice' or 'text'
 };
-
-// Track problematic files that don't seek properly
-const problematicFiles = new Set();
 
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
@@ -28,6 +27,8 @@ const textInputContainer = document.getElementById('textInputContainer');
 const answerInput = document.getElementById('answerInput');
 const submitBtn = document.getElementById('submitBtn');
 const modeToggle = document.getElementById('modeToggle');
+const categorySelect = document.getElementById('categorySelect');
+const questionText = document.getElementById('questionText');
 const feedback = document.getElementById('feedback');
 const feedbackText = document.getElementById('feedbackText');
 const nextBtn = document.getElementById('nextBtn');
@@ -52,6 +53,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isIOS) {
         document.querySelector('.volume-control').classList.add('hidden-ios');
+    }
+    
+    // Load saved stats from localStorage
+    const saved = localStorage.getItem('trumpetStats');
+    if (saved) {
+        try {
+            const stats = JSON.parse(saved);
+            gameState.streak = stats.streak || 0;
+            gameState.correctCount = stats.correct || 0;
+            gameState.wrongCount = stats.wrong || 0;
+            updateStats();
+        } catch (e) {
+            console.log('Failed to load saved stats:', e);
+        }
     }
     
     loadNewSong();
@@ -79,6 +94,22 @@ modeToggle.addEventListener('click', () => {
         optionsContainer.classList.remove('hidden');
         textInputContainer.classList.add('hidden');
     }
+});
+
+// Category select
+categorySelect.addEventListener('change', () => {
+    gameState.inputCategory = categorySelect.value;
+    
+    // Update question text based on category
+    if (gameState.inputCategory === 'title') {
+        questionText.textContent = 'Which song is this?';
+    } else if (gameState.inputCategory === 'performer') {
+        questionText.textContent = 'Who is the performer?';
+    } else if (gameState.inputCategory === 'composer') {
+        questionText.textContent = 'Who is the composer?';
+    }
+    
+    loadNewSong();
 });
 
 // Text input submit
@@ -128,25 +159,17 @@ function checkAnswerFuzzy(userAnswer, correctAnswer) {
     }
     
     // Check against all song titles for closest match
-    let bestMatch = null;
-    let bestDistance = Infinity;
+    var isMatch = false;
     
-    for (const song of SONGS) {
-        const normalizedSong = normalize(song.title);
-        const distance = levenshteinDistance(normalizedUser, normalizedSong);
-        const maxLength = Math.max(normalizedUser.length, normalizedSong.length);
-        const similarity = 1 - (distance / maxLength);
-        
-        // If similarity is > 80%, consider it a match
-        if (similarity > 0.9 && distance < bestDistance) {
-            bestDistance = distance;
-            bestMatch = song;
-        }
-    }
+    const distance = levenshteinDistance(normalizedUser, normalizedCorrect);
+    const maxLength = Math.max(normalizedUser.length, normalizedCorrect.length);
+    const similarity = 1 - (distance / maxLength);
     
-    if (bestMatch) {
-        const isCorrect = bestMatch.id === gameState.currentSong.id;
-        return { correct: isCorrect, match: bestMatch.title, guessedSong: bestMatch };
+    // If similarity is > 90%, consider it a match
+    isMatch = similarity > 0.9;
+    
+    if (isMatch) {
+        return { correct: true, match: correctAnswer };
     }
     
     return { correct: false, match: null };
@@ -157,19 +180,12 @@ function handleTextSubmit() {
     const userAnswer = answerInput.value.trim();
     if (!userAnswer) return;
     
-    const result = checkAnswerFuzzy(userAnswer, gameState.currentSong.title);
+    const result = checkAnswerFuzzy(userAnswer, gameState.currentAnswer);
     
     if (result.correct) {
-        handleGuess(gameState.currentSong);
+        handleGuess(gameState.currentAnswer);
     } else {
-        // Wrong answer - show what they typed vs correct answer
-        if (result.guessedSong) {
-            // They matched a different song
-            handleGuess(result.guessedSong);
-        } else {
-            // No close match found - treat as wrong with current song
-            handleTextWrong(userAnswer);
-        }
+        handleTextWrong(userAnswer);
     }
 }
 
@@ -198,7 +214,7 @@ function handleTextWrong(userAnswer) {
     gameState.wrongCount++;
     updateStats();
     
-    showFeedback('wrong', `Wrong! You typed "${userAnswer}". The answer was: ${gameState.currentSong.title}`);
+    showFeedback('wrong', `Wrong! You typed "${userAnswer}". The answer was: ${gameState.currentAnswer}`);
     nextBtn.classList.remove('hidden');
 }
 
@@ -208,7 +224,23 @@ function loadNewSong() {
     gameState.currentSong = SONGS[Math.floor(Math.random() * SONGS.length)];
     gameState.isPlaying = false;
     gameState.currentStartTime = 0;
-    
+
+    // Set current answer based on selected category
+    switch (gameState.inputCategory) {
+        case 'title':
+            gameState.currentAnswer = gameState.currentSong.title;
+            break;
+        case 'composer':
+            gameState.currentAnswer = gameState.currentSong.composer;
+            break;
+        case 'performer':
+            gameState.currentAnswer = gameState.currentSong.performer;
+            break;
+        default:
+            gameState.currentAnswer = gameState.currentSong.title;
+            break;
+    }
+
     // Clear any existing timeout and interval
     if (gameState.snippetTimeout) {
         clearTimeout(gameState.snippetTimeout);
@@ -221,7 +253,7 @@ function loadNewSong() {
     
     // Reset audio
     audioPlayer.pause();
-    audioPlayer.src = `audio/${gameState.currentSong.filename}`;
+    audioPlayer.src = `/data/audio/${gameState.currentSong.filename}`;
     audioPlayer.currentTime = 0;
     
     // Log when audio is ready
@@ -270,15 +302,25 @@ function generateOptions() {
     gameState.options.forEach(song => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = song.title;
-        btn.onclick = () => handleGuess(song);
+        switch (gameState.inputCategory) {
+            case 'title':
+                btn.textContent = song.title;
+                break;
+            case 'composer':
+                btn.textContent = song.composer;
+                break;
+            case 'performer':
+                btn.textContent = song.performer;
+                break;
+        }
+        btn.onclick = () => handleGuess(btn.textContent);
         optionsContainer.appendChild(btn);
     });
 }
 
 // Play/Pause/Resume/Restart snippet
 playBtn.addEventListener('click', () => {
-    // PAUSE: If currently playing, pause it
+    // Pause: If currently playing, pause it
     if (gameState.isPlaying) {
         audioPlayer.pause();
         gameState.isPlaying = false;
@@ -288,8 +330,8 @@ playBtn.addEventListener('click', () => {
         return;
     }
     
-    // RESUME: If paused mid-snippet (not finished), resume from current position
-    if (!gameState.snippetFinished && gameState.currentStartTime > 0) {
+    // Resume: If paused mid-snippet (not finished), resume from current position
+    else if (!gameState.snippetFinished && gameState.currentStartTime > 0) {
         audioPlayer.play();
         gameState.isPlaying = true;
         playBtn.textContent = 'Pause';
@@ -300,8 +342,8 @@ playBtn.addEventListener('click', () => {
         return;
     }
     
-    // REPLAY: If snippet finished, restart from same start position
-    if (gameState.snippetFinished && gameState.currentStartTime > 0) {
+    // Replay: If snippet finished, restart from same start position
+    else if (gameState.snippetFinished && gameState.currentStartTime > 0) {
         gameState.snippetFinished = false;
         
         console.log('Replaying from:', gameState.currentStartTime);
@@ -309,10 +351,10 @@ playBtn.addEventListener('click', () => {
         // Use smart seek for replay too
         smartSeekAndPlay(gameState.currentStartTime, SNIPPET_DURATION * 1000);
         return;
+    } else {
+        // New snippet: Start fresh with new random position
+        startNewSnippet();
     }
-    
-    // NEW SNIPPET: Start fresh with new random position
-    startNewSnippet();
 });
 
 // Start a completely new random snippet
@@ -349,17 +391,9 @@ function startNewSnippet() {
     }
 }
 
-// Smart seek with validation and fallback for problematic files
+// Smart seek with validation because there were issues with seeking initially
 function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
     const filename = gameState.currentSong.filename;
-    const isProblematic = problematicFiles.has(filename);
-    
-    // For problematic files, use a simpler fallback position
-    if (isProblematic && attempt === 1) {
-        console.log('File known to have seek issues, using workaround:', filename);
-        workaroundSeek(targetTime, durationMs);
-        return;
-    }
     
     let seekHandled = false;
     
@@ -370,13 +404,10 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         // Validate the seek actually worked
         const actualTime = audioPlayer.currentTime;
         const seekDiff = Math.abs(actualTime - targetTime);
-        
-        console.log('Seek attempt', attempt, '- Target:', targetTime, 'Actual:', actualTime, 'Diff:', seekDiff);
-        
+                
         // If seek failed (difference > 2 seconds) and we haven't tried workaround yet
         if (seekDiff > 2 && attempt === 1) {
-            console.log('Seek validation failed, marking as problematic and trying workaround');
-            problematicFiles.add(filename);
+            console.log('Seek validation failed !?');
             workaroundSeek(targetTime, durationMs);
             return;
         }
@@ -389,7 +420,6 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         startSnippetTimer(durationMs);
     };
     
-    // Attach listener BEFORE setting currentTime to avoid race condition
     audioPlayer.addEventListener('seeked', onSeeked, { once: true });
     
     // Timeout fallback
@@ -403,7 +433,6 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         
         if (seekDiff > 2 && attempt === 1) {
             console.log('Seek timeout with bad position, trying workaround');
-            problematicFiles.add(filename);
             workaroundSeek(targetTime, durationMs);
         } else {
             // Use whatever position we have
@@ -415,7 +444,6 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
         }
     }, 500);
     
-    // Set the target time AFTER attaching the listener
     audioPlayer.currentTime = targetTime;
 }
 
@@ -423,15 +451,10 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
 function workaroundSeek(originalTarget, durationMs) {
     const filename = gameState.currentSong.filename;
     
-    // Strategy: Try seeking to 1 second first, then to target
-    // This "warms up" the seek mechanism for some problematic files
-    console.log('Workaround seek: warming up to 1s first');
-    
+    // Try seeking to 1 second first, then to target    
     audioPlayer.currentTime = 1;
     
-    const onWarmupSeeked = () => {
-        console.log('Warmup seek complete, now seeking to target:', originalTarget);
-        
+    const onWarmupSeeked = () => {        
         // Now try the real seek
         setTimeout(() => {
             audioPlayer.currentTime = originalTarget;
@@ -517,7 +540,7 @@ function startSnippetTimer(remainingTimeMs) {
 }
 
 // Handle user's guess
-function handleGuess(selectedSong) {
+function handleGuess(selectedOption) {
     if (gameState.isPlaying) {
         audioPlayer.pause();
         clearTimeout(gameState.snippetTimeout);
@@ -536,7 +559,7 @@ function handleGuess(selectedSong) {
     playBtn.disabled = true;
     playBtn.textContent = 'Play Snippet';
     
-    const isCorrect = selectedSong.id === gameState.currentSong.id;
+    const isCorrect = selectedOption === gameState.currentAnswer;
     
     if (isCorrect) {
         // Correct answer
@@ -546,12 +569,12 @@ function handleGuess(selectedSong) {
         
         // Highlight correct button
         optionBtns.forEach(btn => {
-            if (btn.textContent === gameState.currentSong.title) {
+            if (btn.textContent === gameState.currentAnswer) {
                 btn.classList.add('correct');
             }
         });
         
-        showFeedback('correct', `Correct! ${gameState.currentSong.title}`);
+        showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
         nextBtn.classList.remove('hidden');
     } else {
         // Wrong answer
@@ -561,15 +584,14 @@ function handleGuess(selectedSong) {
         
         // Highlight buttons
         optionBtns.forEach(btn => {
-            if (btn.textContent === selectedSong.title) {
-                btn.classList.add('wrong');
-            }
-            if (btn.textContent === gameState.currentSong.title) {
+            if (btn.textContent === gameState.currentAnswer) {
                 btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
             }
         });
         
-        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentSong.title}`);
+        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
         nextBtn.classList.remove('hidden');
     }
 }
@@ -590,7 +612,7 @@ skipBtn.addEventListener('click', () => {
     const optionBtns = optionsContainer.querySelectorAll('.option-btn');
     optionBtns.forEach(btn => {
         btn.disabled = true;
-        if (btn.textContent === gameState.currentSong.title) {
+        if (btn.textContent === gameState.currentAnswer) {
             btn.classList.add('correct');
         }
     });
@@ -601,7 +623,7 @@ skipBtn.addEventListener('click', () => {
     gameState.wrongCount++;
     updateStats();
     
-    showFeedback('skipped', `Skipped! The answer was: ${gameState.currentSong.title}`);
+    showFeedback('skipped', `Skipped! The answer was: ${gameState.currentAnswer}`);
     nextBtn.classList.remove('hidden');
 });
 
@@ -628,4 +650,11 @@ function updateStats() {
     streakCount.textContent = gameState.streak;
     correctCount.textContent = gameState.correctCount;
     wrongCount.textContent = gameState.wrongCount;
+    
+    // Save stats to localStorage
+    localStorage.setItem('trumpetStats', JSON.stringify({
+        streak: gameState.streak,
+        correct: gameState.correctCount,
+        wrong: gameState.wrongCount
+    }));
 }

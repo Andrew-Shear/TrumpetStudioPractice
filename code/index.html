@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trumpet Studio Practice Tool</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
     <div class="container">
@@ -26,14 +26,25 @@
                 <button id="skipBtn" class="skip-btn">Skip</button>
             </div>
 
-            <div class="mode-toggle">
-                <button id="modeToggle" class="mode-btn">Switch to Text Input</button>
+            <div class="controls-row">
+                <div class="mode-toggle">
+                    <button id="modeToggle" class="mode-btn">Switch to Text Input</button>
+                </div>
+
+                <div class="category-selector">
+                    <label for="categorySelect">Guess the:</label>
+                    <select id="categorySelect" class="category-select">
+                        <option value="title">Song Title</option>
+                        <option value="performer">Performer</option>
+                        <option value="composer">Composer</option>
+                    </select>
+                </div>
             </div>
 
             <div class="question-section">
-                <h2>Which song is this?</h2>
+                <h2 id="questionText">Which song is this?</h2>
                 <div id="optionsContainer" class="options-container">
-                    <!-- Options will be generated here -->
+                    <!-- Options will be placed here -->
                 </div>
                 <div id="textInputContainer" class="text-input-container hidden">
                     <input type="text" id="answerInput" placeholder="Type the song name..." autocomplete="off">
@@ -58,7 +69,7 @@
 
     <audio id="audioPlayer"></audio>
 
-    <script src="songs.js"></script>
-    <script src="app.js"></script>
+    <script src="/data/songs.js?v=4"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>

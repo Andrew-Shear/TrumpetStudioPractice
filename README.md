@@ -1,38 +1,40 @@
 # Trumpet Studio Practice Tool
 
-https://andrew-shear.github.io/TrumpetStudioPractice/
+A web-based practice tool for listening exams. Plays random 20-second snippets of songs and tests your ability to identify their name, performer, and composer.
 
-A web-based practice tool for listening exams. Plays random 20-second snippets of songs and tests your ability to identify them.
+https://andrew-shear.github.io/TrumpetStudioPractice/
 
 ## Features
 
 - Random 20-second snippets from random positions in each song
-- Multiple choice questions
+- Multiple choice or fill in the blank questions
 - Skip button to reveal answer and move on
-- Streak counter and correct/wrong tracking
+- Streak counter and correct/wrong tracking that are saved across refreshes
 - Endless practice loop
 
 ## How to Use
 
 1. Click **"Play Snippet"** to hear a random 20-second section of a random song
-2. Select the correct song title from the 4 options
-4. Use **"Skip"** if you give up and want to see the answer
+2. Select the correct choice from the 4 options
+3. Use **"Skip"** if you give up and want to see the answer
+4. Use the **"Switch to Text Input"** button and **"Guess the: "** dropdown to switch input modes
 
 ## File Structure
 
 ```
-trumpet-studio-practice/
-├── index.html          # Main page
-├── styles.css          # Styling
-├── app.js              # Game logic
-├── songs.js            # Song data (edit this each semester)
-├── audio/              # MP3 files (not included in repo)
-│   ├── song1.mp3
-│   └── song2.mp3
-└── README.md           # This file
+listening-list/
+├── code
+│   ├── app.js
+│   ├── index.html
+│   └── styles.css
+├── data
+│   ├── audio
+│   └── songs.js
+├── README.md
+└── tests
 ```
 
-## Notes
+## Author
 
-- Streak and stats reset on page refresh (by design)
-- Each play picks a random starting point in the song (simulates the real exam)
+Andrew Shear
+ashear@vt.edu

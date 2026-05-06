@@ -1,3 +1,4 @@
+// Song data array with details and filenames in audio/
 const SONGS = [
     {
         id: "0",
