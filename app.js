@@ -165,8 +165,8 @@ function checkAnswerFuzzy(userAnswer, correctAnswer) {
     const maxLength = Math.max(normalizedUser.length, normalizedCorrect.length);
     const similarity = 1 - (distance / maxLength);
     
-    // If similarity is > 90%, consider it a match
-    isMatch = similarity > 0.9;
+    // If similarity is >= 85%, consider it a match
+    isMatch = similarity >= 0.85;
     
     if (isMatch) {
         return { correct: true, match: correctAnswer };
@@ -290,7 +290,21 @@ function loadNewSong() {
 // Generate multiple choice options
 function generateOptions() {
     // Get 3 random distractors (different from correct answer)
-    const distractors = SONGS.filter(song => song.id !== gameState.currentSong.id);
+    const distractors = SONGS.filter(song => {
+        let song_answer = null;
+        switch (gameState.inputCategory) {
+            case 'title':
+                song_answer = song.title;
+                break;
+            case 'composer':
+                song_answer = song.composer;
+                break;
+            default:
+                song_answer = song.performer;
+                break;
+        }
+        return song_answer !== gameState.currentAnswer;
+    });
     const shuffledDistractors = distractors.sort(() => 0.5 - Math.random()).slice(0, 3);
     
     // Combine and shuffle
