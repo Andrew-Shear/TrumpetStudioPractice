@@ -115,7 +115,9 @@ categorySelect.addEventListener('change', () => {
 // Text input submit
 submitBtn.addEventListener('click', handleTextSubmit);
 answerInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && submitBtn.disabled === false) {
+        answerInput.disabled = true;
+        submitBtn.disabled = true;
         handleTextSubmit();
     }
 });
@@ -203,8 +205,6 @@ function handleTextWrong(userAnswer) {
     gameState.snippetFinished = false;
     
     // Disable input
-    answerInput.disabled = true;
-    submitBtn.disabled = true;
     skipBtn.disabled = true;
     playBtn.disabled = true;
     playBtn.textContent = 'Play Snippet';
