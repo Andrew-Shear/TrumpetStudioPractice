@@ -233,7 +233,7 @@ function handleMultipleGuess(selectedOption) {
         gameState.wrongCount++;
         showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     }
-    
+
     // Highlight buttons
     optionBtns.forEach(btn => {
         if (btn.textContent === gameState.currentAnswer) {
@@ -451,8 +451,7 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
                 
         // If seek failed (difference > 2 seconds) and we haven't tried workaround yet
         if (seekDiff > 2 && attempt === 1) {
-            console.log('Seek validation failed !?');
-            workaroundSeek(targetTime, durationMs);
+            console.log('Seek failed !?');
             return;
         }
         
@@ -467,94 +466,9 @@ function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
     audioPlayer.addEventListener('seeked', onSeeked, { once: true });
     
     // Timeout fallback
-    const seekTimeout = setTimeout(() => {
-        if (seekHandled) return;
-        seekHandled = true;
-        
-        console.log('Seek timeout on attempt', attempt);
-        const actualTime = audioPlayer.currentTime;
-        const seekDiff = Math.abs(actualTime - targetTime);
-        
-        if (seekDiff > 2 && attempt === 1) {
-            console.log('Seek timeout with bad position, trying workaround');
-            workaroundSeek(targetTime, durationMs);
-        } else {
-            // Use whatever position we have
-            gameState.currentStartTime = actualTime;
-            audioPlayer.play();
-            gameState.isPlaying = true;
-            playBtn.textContent = 'Pause';
-            startSnippetTimer(durationMs);
-        }
-    }, 500);
+    const seekTimeout = setTimeout(onSeeked, 500);
     
     audioPlayer.currentTime = targetTime;
-}
-
-// Workaround seek for problematic files - try seeking to an early position first
-function workaroundSeek(originalTarget, durationMs) {
-    const filename = gameState.currentSong.filename;
-    
-    // Try seeking to 1 second first, then to target    
-    audioPlayer.currentTime = 1;
-    
-    const onWarmupSeeked = () => {        
-        // Now try the real seek
-        setTimeout(() => {
-            audioPlayer.currentTime = originalTarget;
-            
-            const onFinalSeeked = () => {
-                const actualTime = audioPlayer.currentTime;
-                const seekDiff = Math.abs(actualTime - originalTarget);
-                
-                console.log('Workaround seek result - Target:', originalTarget, 'Actual:', actualTime, 'Diff:', seekDiff);
-                
-                // If still failing, just use a position early in the file
-                if (seekDiff > 2) {
-                    console.log('Workaround failed, using early position in file');
-                    const earlyPosition = Math.min(5, audioPlayer.duration * 0.1);
-                    audioPlayer.currentTime = earlyPosition;
-                    gameState.currentStartTime = earlyPosition;
-                } else {
-                    gameState.currentStartTime = actualTime;
-                }
-                
-                audioPlayer.play();
-                gameState.isPlaying = true;
-                playBtn.textContent = 'Pause';
-                startSnippetTimer(durationMs);
-            };
-            
-            // Timeout for final seek
-            const finalTimeout = setTimeout(() => {
-                console.log('Final seek timeout, using early position');
-                const earlyPosition = Math.min(5, audioPlayer.duration * 0.1);
-                audioPlayer.currentTime = earlyPosition;
-                gameState.currentStartTime = earlyPosition;
-                audioPlayer.play();
-                gameState.isPlaying = true;
-                playBtn.textContent = 'Pause';
-                startSnippetTimer(durationMs);
-            }, 300);
-            
-            audioPlayer.addEventListener('seeked', () => {
-                clearTimeout(finalTimeout);
-                onFinalSeeked();
-            }, { once: true });
-            
-        }, 50); // Small delay after warmup
-    };
-    
-    // Timeout for warmup
-    const warmupTimeout = setTimeout(() => {
-        console.log('Warmup seek timeout, trying direct seek');
-        onWarmupSeeked();
-    }, 300);
-    
-    audioPlayer.addEventListener('seeked', () => {
-        clearTimeout(warmupTimeout);
-        onWarmupSeeked();
-    }, { once: true });
 }
 
 // Start/restart the 20-second timer (no display update)
