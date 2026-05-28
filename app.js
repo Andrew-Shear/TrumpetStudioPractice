@@ -94,6 +94,8 @@ modeToggle.addEventListener('click', () => {
         optionsContainer.classList.remove('hidden');
         textInputContainer.classList.add('hidden');
     }
+
+    loadNewSong();
 });
 
 // Category select
@@ -170,13 +172,9 @@ function checkAnswerFuzzy(userAnswer, correctAnswer) {
     return false;
 }
 
-// Handle text input submission
-function handleTextSubmit() {
+function disableInput() {
     answerInput.disabled = true;
     submitBtn.disabled = true;
-
-    const userAnswer = answerInput.value.trim();
-    if (!userAnswer) return;
 
     if (gameState.isPlaying) {
         audioPlayer.pause();
@@ -185,10 +183,18 @@ function handleTextSubmit() {
         gameState.isPlaying = false;
     }
     
-    // Disable input
+    // Disable music
     skipBtn.disabled = true;
     playBtn.disabled = true;
     playBtn.textContent = 'Play Snippet';
+}
+
+// Handle text input submission
+function handleTextSubmit() {
+    const userAnswer = answerInput.value.trim();
+    if (!userAnswer) return;
+
+    disableInput();
         
     if (checkAnswerFuzzy(userAnswer, gameState.currentAnswer)) {
         gameState.streak++;
@@ -206,19 +212,7 @@ function handleTextSubmit() {
 
 // Handle multiple choice guess
 function handleMultipleGuess(selectedOption) {
-    if (gameState.isPlaying) {
-        audioPlayer.pause();
-        clearTimeout(gameState.snippetTimeout);
-        clearInterval(gameState.timerInterval);
-        gameState.isPlaying = false;
-    }
-    
-    // Disable all buttons
-    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
-    optionBtns.forEach(btn => btn.disabled = true);
-    skipBtn.disabled = true;
-    playBtn.disabled = true;
-    playBtn.textContent = 'Play Snippet';
+    disableInput();
     
     const isCorrect = selectedOption === gameState.currentAnswer;
     
@@ -234,8 +228,10 @@ function handleMultipleGuess(selectedOption) {
         showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     }
 
-    // Highlight buttons
+    // Highlight and disable buttons
+    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
     optionBtns.forEach(btn => {
+        btn => btn.disabled = true
         if (btn.textContent === gameState.currentAnswer) {
             btn.classList.add('correct');
         } else if (!isCorrect && btn.textContent === selectedOption) {
@@ -481,8 +477,6 @@ function startSnippetTimer(remainingTimeMs) {
         clearTimeout(gameState.snippetTimeout);
     }
     
-
-    
     // Use provided remaining time or default to full duration
     const timeoutDuration = remainingTimeMs || (SNIPPET_DURATION * 1000);
     
@@ -499,17 +493,8 @@ function startSnippetTimer(remainingTimeMs) {
 
 // Skip button
 skipBtn.addEventListener('click', () => {
-    if (gameState.isPlaying) {
-        audioPlayer.pause();
-        clearTimeout(gameState.snippetTimeout);
-        gameState.isPlaying = false;
-    }
+    disableInput()
     
-    // Reset snippet state for next song
-    gameState.currentStartTime = 0;
-    gameState.snippetFinished = false;
-    
-    // Disable all buttons
     const optionBtns = optionsContainer.querySelectorAll('.option-btn');
     optionBtns.forEach(btn => {
         btn.disabled = true;
@@ -517,8 +502,6 @@ skipBtn.addEventListener('click', () => {
             btn.classList.add('correct');
         }
     });
-    skipBtn.disabled = true;
-    playBtn.disabled = true;
     
     gameState.streak = 0;
     gameState.wrongCount++;
