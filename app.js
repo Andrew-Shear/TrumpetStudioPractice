@@ -149,60 +149,49 @@ function levenshteinDistance(str1, str2) {
 
 // Check if answer is correct using fuzzy matching
 function checkAnswerFuzzy(userAnswer, correctAnswer) {
-    // Normalize both strings: lowercase, trim whitespace, remove extra spaces
-    const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, ' ');
+    // Normalize both strings: lowercase, remove extra spaces
+    const normalize = (str) => str.toLowerCase().replace(/\s+/g, ' ');
     
     const normalizedUser = normalize(userAnswer);
     const normalizedCorrect = normalize(correctAnswer);
     
     // Exact match after normalization
     if (normalizedUser === normalizedCorrect) {
-        return { correct: true, match: correctAnswer };
+        return true;
     }
-    
-    // Check against all song titles for closest match
-    var isMatch = false;
-    
+        
     const distance = levenshteinDistance(normalizedUser, normalizedCorrect);
     const maxLength = Math.max(normalizedUser.length, normalizedCorrect.length);
     const similarity = 1 - (distance / maxLength);
     
-    // If similarity is >= 85%, consider it a match
-    isMatch = similarity >= 0.85;
-    
-    if (isMatch) {
-        return { correct: true, match: correctAnswer };
+    // If similarity is >= 85%, consider it a match    
+    if (similarity >= 0.85) {
+        return true;
     }
     
-    return { correct: false, match: null };
+    return false;
 }
 
 // Handle text input submission
 function handleTextSubmit() {
     const userAnswer = answerInput.value.trim();
     if (!userAnswer) return;
-    
-    const result = checkAnswerFuzzy(userAnswer, gameState.currentAnswer);
-    
-    if (result.correct) {
+        
+    if (checkAnswerFuzzy(userAnswer, gameState.currentAnswer)) {
         handleGuess(gameState.currentAnswer);
     } else {
-        handleTextWrong(userAnswer);
+        handleTextWrong();
     }
 }
 
 // Handle wrong text answer
-function handleTextWrong(userAnswer) {
+function handleTextWrong() {
     if (gameState.isPlaying) {
         audioPlayer.pause();
         clearTimeout(gameState.snippetTimeout);
         clearInterval(gameState.timerInterval);
         gameState.isPlaying = false;
     }
-    
-    // Reset snippet state for next song
-    gameState.currentStartTime = 0;
-    gameState.snippetFinished = false;
     
     // Disable input
     skipBtn.disabled = true;
@@ -214,16 +203,71 @@ function handleTextWrong(userAnswer) {
     gameState.wrongCount++;
     updateStats();
     
-    showFeedback('wrong', `Wrong! You typed "${userAnswer}". The answer was: ${gameState.currentAnswer}`);
+    showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
+    nextBtn.classList.remove('hidden');
+}
+
+
+// Handle user's guess
+function handleGuess(selectedOption) {
+    if (gameState.isPlaying) {
+        audioPlayer.pause();
+        clearTimeout(gameState.snippetTimeout);
+        clearInterval(gameState.timerInterval);
+        gameState.isPlaying = false;
+    }
+    
+    // Disable all buttons
+    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
+    optionBtns.forEach(btn => btn.disabled = true);
+    skipBtn.disabled = true;
+    playBtn.disabled = true;
+    playBtn.textContent = 'Play Snippet';
+    
+    const isCorrect = selectedOption === gameState.currentAnswer;
+    
+    if (isCorrect) {
+        // Correct answer
+        gameState.streak++;
+        gameState.correctCount++;
+        updateStats();
+        
+        // Highlight correct button
+        optionBtns.forEach(btn => {
+            if (btn.textContent === gameState.currentAnswer) {
+                btn.classList.add('correct');
+            }
+        });
+        
+        showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
+    } else {
+        // Wrong answer
+        gameState.streak = 0;
+        gameState.wrongCount++;
+        updateStats();
+        
+        // Highlight buttons
+        optionBtns.forEach(btn => {
+            if (btn.textContent === gameState.currentAnswer) {
+                btn.classList.add('correct');
+            } else if (btn.textContent === selectedOption) {
+                btn.classList.add('wrong');
+            }
+        });
+        
+        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
+    }
     nextBtn.classList.remove('hidden');
 }
 
 // Load a new random song
 function loadNewSong() {
     // Reset state
+
     gameState.currentSong = SONGS[Math.floor(Math.random() * SONGS.length)];
     gameState.isPlaying = false;
     gameState.currentStartTime = 0;
+    gameState.snippetFinished = false;
 
     // Set current answer based on selected category
     switch (gameState.inputCategory) {
@@ -551,63 +595,6 @@ function startSnippetTimer(remainingTimeMs) {
         gameState.timerInterval = null;
         playBtn.textContent = 'Replay Snippet';
     }, timeoutDuration);
-}
-
-// Handle user's guess
-function handleGuess(selectedOption) {
-    if (gameState.isPlaying) {
-        audioPlayer.pause();
-        clearTimeout(gameState.snippetTimeout);
-        clearInterval(gameState.timerInterval);
-        gameState.isPlaying = false;
-    }
-    
-    // Reset snippet state for next song
-    gameState.currentStartTime = 0;
-    gameState.snippetFinished = false;
-    
-    // Disable all buttons
-    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
-    optionBtns.forEach(btn => btn.disabled = true);
-    skipBtn.disabled = true;
-    playBtn.disabled = true;
-    playBtn.textContent = 'Play Snippet';
-    
-    const isCorrect = selectedOption === gameState.currentAnswer;
-    
-    if (isCorrect) {
-        // Correct answer
-        gameState.streak++;
-        gameState.correctCount++;
-        updateStats();
-        
-        // Highlight correct button
-        optionBtns.forEach(btn => {
-            if (btn.textContent === gameState.currentAnswer) {
-                btn.classList.add('correct');
-            }
-        });
-        
-        showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
-        nextBtn.classList.remove('hidden');
-    } else {
-        // Wrong answer
-        gameState.streak = 0;
-        gameState.wrongCount++;
-        updateStats();
-        
-        // Highlight buttons
-        optionBtns.forEach(btn => {
-            if (btn.textContent === gameState.currentAnswer) {
-                btn.classList.add('correct');
-            } else {
-                btn.classList.add('wrong');
-            }
-        });
-        
-        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
-        nextBtn.classList.remove('hidden');
-    }
 }
 
 // Skip button
