@@ -116,8 +116,6 @@ categorySelect.addEventListener('change', () => {
 submitBtn.addEventListener('click', handleTextSubmit);
 answerInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter' && submitBtn.disabled === false) {
-        answerInput.disabled = true;
-        submitBtn.disabled = true;
         handleTextSubmit();
     }
 });
@@ -174,18 +172,12 @@ function checkAnswerFuzzy(userAnswer, correctAnswer) {
 
 // Handle text input submission
 function handleTextSubmit() {
+    answerInput.disabled = true;
+    submitBtn.disabled = true;
+
     const userAnswer = answerInput.value.trim();
     if (!userAnswer) return;
-        
-    if (checkAnswerFuzzy(userAnswer, gameState.currentAnswer)) {
-        handleGuess(gameState.currentAnswer);
-    } else {
-        handleTextWrong();
-    }
-}
 
-// Handle wrong text answer
-function handleTextWrong() {
     if (gameState.isPlaying) {
         audioPlayer.pause();
         clearTimeout(gameState.snippetTimeout);
@@ -197,19 +189,23 @@ function handleTextWrong() {
     skipBtn.disabled = true;
     playBtn.disabled = true;
     playBtn.textContent = 'Play Snippet';
-    
-    // Update stats
-    gameState.streak = 0;
-    gameState.wrongCount++;
+        
+    if (checkAnswerFuzzy(userAnswer, gameState.currentAnswer)) {
+        gameState.streak++;
+        gameState.correctCount++;
+        showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
+    } else {
+        gameState.streak = 0;
+        gameState.wrongCount++;
+        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
+    }
+
     updateStats();
-    
-    showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     nextBtn.classList.remove('hidden');
 }
 
-
-// Handle user's guess
-function handleGuess(selectedOption) {
+// Handle multiple choice guess
+function handleMultipleGuess(selectedOption) {
     if (gameState.isPlaying) {
         audioPlayer.pause();
         clearTimeout(gameState.snippetTimeout);
@@ -230,33 +226,23 @@ function handleGuess(selectedOption) {
         // Correct answer
         gameState.streak++;
         gameState.correctCount++;
-        updateStats();
-        
-        // Highlight correct button
-        optionBtns.forEach(btn => {
-            if (btn.textContent === gameState.currentAnswer) {
-                btn.classList.add('correct');
-            }
-        });
-        
         showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
     } else {
         // Wrong answer
         gameState.streak = 0;
         gameState.wrongCount++;
-        updateStats();
-        
-        // Highlight buttons
-        optionBtns.forEach(btn => {
-            if (btn.textContent === gameState.currentAnswer) {
-                btn.classList.add('correct');
-            } else if (btn.textContent === selectedOption) {
-                btn.classList.add('wrong');
-            }
-        });
-        
         showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     }
+    
+    // Highlight buttons
+    optionBtns.forEach(btn => {
+        if (btn.textContent === gameState.currentAnswer) {
+            btn.classList.add('correct');
+        } else if (!isCorrect && btn.textContent === selectedOption) {
+            btn.classList.add('wrong');
+        }
+    });
+    updateStats();
     nextBtn.classList.remove('hidden');
 }
 
@@ -371,7 +357,7 @@ function generateOptions() {
                 btn.textContent = song.performer;
                 break;
         }
-        btn.onclick = () => handleGuess(btn.textContent);
+        btn.onclick = () => handleMultipleGuess(btn.textContent);
         optionsContainer.appendChild(btn);
     });
 }
