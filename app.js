@@ -231,7 +231,7 @@ function handleMultipleGuess(selectedOption) {
     // Highlight and disable buttons
     const optionBtns = optionsContainer.querySelectorAll('.option-btn');
     optionBtns.forEach(btn => {
-        btn => btn.disabled = true;
+        btn.disabled = true;
         if (btn.textContent === gameState.currentAnswer) {
             btn.classList.add('correct');
         } else if (!isCorrect && btn.textContent === selectedOption) {
