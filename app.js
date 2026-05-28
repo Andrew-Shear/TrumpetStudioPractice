@@ -231,7 +231,7 @@ function handleMultipleGuess(selectedOption) {
     // Highlight and disable buttons
     const optionBtns = optionsContainer.querySelectorAll('.option-btn');
     optionBtns.forEach(btn => {
-        btn => btn.disabled = true
+        btn => btn.disabled = true;
         if (btn.textContent === gameState.currentAnswer) {
             btn.classList.add('correct');
         } else if (!isCorrect && btn.textContent === selectedOption) {
@@ -353,7 +353,11 @@ function generateOptions() {
                 btn.textContent = song.performer;
                 break;
         }
-        btn.onclick = () => handleMultipleGuess(btn.textContent);
+        btn.onclick = () => {
+            if (!btn.disabled) {
+                handleMultipleGuess(btn.textContent);
+            }
+        }
         optionsContainer.appendChild(btn);
     });
 }

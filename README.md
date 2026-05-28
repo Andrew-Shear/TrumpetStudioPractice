@@ -22,16 +22,14 @@ https://andrew-shear.github.io/TrumpetStudioPractice/
 ## File Structure
 
 ```
-listening-list/
-├── code
-│   ├── app.js
-│   ├── index.html
-│   └── styles.css
-├── data
-│   ├── audio
-│   └── songs.js
+TrumpetStudioPractice/
 ├── README.md
-└── tests
+├── app.js
+├── data/
+│   ├── audio/
+│   └── songs.js
+├── index.html
+└── styles.css
 ```
 
 ## Author
