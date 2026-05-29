@@ -18,7 +18,6 @@ let gameState = {
 // DOM Elements
 const audioPlayer = document.getElementById('audioPlayer');
 const playBtn = document.getElementById('playBtn');
-
 const volumeSlider = document.getElementById('volumeSlider');
 const volumeValue = document.getElementById('volumeValue');
 const skipBtn = document.getElementById('skipBtn');
@@ -253,9 +252,6 @@ function loadNewSong() {
 
     // Set current answer based on selected category
     switch (gameState.inputCategory) {
-        case 'title':
-            gameState.currentAnswer = gameState.currentSong.title;
-            break;
         case 'composer':
             gameState.currentAnswer = gameState.currentSong.composer;
             break;
@@ -316,43 +312,38 @@ function loadNewSong() {
 // Generate multiple choice options
 function generateOptions() {
     // Get 3 random distractors (different from correct answer)
-    const distractors = SONGS.filter(song => {
+    let distractors = new Set();
+    while (distractors.size < 3) {
+        const randomIndex = Math.floor(Math.random() * SONGS.length);
         let song_answer = null;
         switch (gameState.inputCategory) {
             case 'title':
-                song_answer = song.title;
+                song_answer = SONGS[randomIndex].title;
                 break;
             case 'composer':
-                song_answer = song.composer;
+                song_answer = SONGS[randomIndex].composer;
                 break;
             default:
-                song_answer = song.performer;
+                song_answer = SONGS[randomIndex].performer;
                 break;
         }
-        return song_answer !== gameState.currentAnswer;
-    });
+        if (song_answer !== gameState.currentAnswer) {
+            distractors.add(song_answer);
+        }
+    }
+    distractors = [...distractors];
     const shuffledDistractors = distractors.sort(() => 0.5 - Math.random()).slice(0, 3);
     
     // Combine and shuffle
-    gameState.options = [gameState.currentSong, ...shuffledDistractors]
+    gameState.options = [gameState.currentAnswer, ...shuffledDistractors]
         .sort(() => 0.5 - Math.random());
-    
+        
     // Render options
     optionsContainer.innerHTML = '';
     gameState.options.forEach(song => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        switch (gameState.inputCategory) {
-            case 'title':
-                btn.textContent = song.title;
-                break;
-            case 'composer':
-                btn.textContent = song.composer;
-                break;
-            case 'performer':
-                btn.textContent = song.performer;
-                break;
-        }
+        btn.textContent = song;
         btn.onclick = () => {
             if (!btn.disabled) {
                 handleMultipleGuess(btn.textContent);
