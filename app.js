@@ -194,27 +194,29 @@ function handleTextSubmit() {
     if (!userAnswer) return;
 
     disableInput();
-        
-    if (checkAnswerFuzzy(userAnswer, gameState.currentAnswer)) {
-        gameState.streak++;
-        gameState.correctCount++;
-        showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
-    } else {
-        gameState.streak = 0;
-        gameState.wrongCount++;
-        showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
-    }
-
-    updateStats();
-    nextBtn.classList.remove('hidden');
+    updateFeedbackAndStats(checkAnswerFuzzy(userAnswer, gameState.currentAnswer));
 }
 
 // Handle multiple choice guess
 function handleMultipleGuess(selectedOption) {
-    disableInput();
-    
     const isCorrect = selectedOption === gameState.currentAnswer;
     
+    disableInput();
+    updateFeedbackAndStats(isCorrect);
+
+    // Highlight and disable buttons
+    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
+    optionBtns.forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === gameState.currentAnswer) {
+            btn.classList.add('correct');
+        } else if (!isCorrect && btn.textContent === selectedOption) {
+            btn.classList.add('wrong');
+        }
+    });
+}
+
+function updateFeedbackAndStats(isCorrect) {
     if (isCorrect) {
         // Correct answer
         gameState.streak++;
@@ -227,16 +229,6 @@ function handleMultipleGuess(selectedOption) {
         showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     }
 
-    // Highlight and disable buttons
-    const optionBtns = optionsContainer.querySelectorAll('.option-btn');
-    optionBtns.forEach(btn => {
-        btn.disabled = true;
-        if (btn.textContent === gameState.currentAnswer) {
-            btn.classList.add('correct');
-        } else if (!isCorrect && btn.textContent === selectedOption) {
-            btn.classList.add('wrong');
-        }
-    });
     updateStats();
     nextBtn.classList.remove('hidden');
 }
