@@ -376,7 +376,7 @@ playBtn.addEventListener('click', () => {
         console.log('Replaying from:', gameState.currentStartTime);
         
         // Use smart seek for replay too
-        smartSeekAndPlay(gameState.currentStartTime, SNIPPET_DURATION * 1000);
+        seekAndPlay(gameState.currentStartTime, SNIPPET_DURATION * 1000);
         return;
     } else {
         // New snippet: Start fresh with new random position
@@ -402,7 +402,7 @@ function startNewSnippet() {
         console.log('Starting snippet at:', targetTime, 'duration:', audioPlayer.duration);
         
         // Use smart seek with validation
-        smartSeekAndPlay(targetTime, SNIPPET_DURATION * 1000);
+        seekAndPlay(targetTime, SNIPPET_DURATION * 1000);
     };
     
     if (audioPlayer.duration && audioPlayer.duration > 0) {
@@ -418,40 +418,13 @@ function startNewSnippet() {
     }
 }
 
-// Smart seek with validation because there were issues with seeking initially
-function smartSeekAndPlay(targetTime, durationMs, attempt = 1) {
-    const filename = gameState.currentSong.filename;
-    
-    let seekHandled = false;
-    
-    const onSeeked = () => {
-        if (seekHandled) return;
-        seekHandled = true;
-        
-        // Validate the seek actually worked
-        const actualTime = audioPlayer.currentTime;
-        const seekDiff = Math.abs(actualTime - targetTime);
-                
-        // If seek failed (difference > 2 seconds) and we haven't tried workaround yet
-        if (seekDiff > 2 && attempt === 1) {
-            console.log('Seek failed !?');
-            return;
-        }
-        
-        // Seek succeeded or we're out of options
-        gameState.currentStartTime = actualTime;
-        audioPlayer.play();
-        gameState.isPlaying = true;
-        playBtn.textContent = 'Pause';
-        startSnippetTimer(durationMs);
-    };
-    
-    audioPlayer.addEventListener('seeked', onSeeked, { once: true });
-    
-    // Timeout fallback
-    const seekTimeout = setTimeout(onSeeked, 500);
-    
+function seekAndPlay(targetTime, durationMs) {
     audioPlayer.currentTime = targetTime;
+    gameState.currentStartTime = targetTime;
+    audioPlayer.play();
+    gameState.isPlaying = true;
+    playBtn.textContent = 'Pause';
+    startSnippetTimer(durationMs);
 }
 
 // Start/restart the 20-second timer (no display update)
