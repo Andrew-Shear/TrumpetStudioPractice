@@ -13,7 +13,7 @@ let gameState = {
     currentStartTime: 0,
     snippetFinished: false,
     inputCategory: 'title', // 'title' or 'composer' or 'performer'
-    inputMode: 'multiple-choice' // 'multiple-choice' or 'text'
+    inputMode: 'multipleChoice' // 'multipleChoice' or 'text'
 };
 
 // DOM Elements
@@ -94,7 +94,7 @@ volumeSlider.addEventListener('input', () => {
 
 // Mode toggle
 modeToggle.addEventListener('click', () => {
-    if (gameState.inputMode === 'multiple-choice') {
+    if (gameState.inputMode === 'multipleChoice') {
         gameState.inputMode = 'text';
         modeToggle.textContent = 'Switch to Multiple Choice';
         optionsContainer.classList.add('hidden');
@@ -102,7 +102,7 @@ modeToggle.addEventListener('click', () => {
         answerInput.value = '';
         answerInput.focus();
     } else {
-        gameState.inputMode = 'multiple-choice';
+        gameState.inputMode = 'multipleChoice';
         modeToggle.textContent = 'Switch to Text Input';
         optionsContainer.classList.remove('hidden');
         textInputContainer.classList.add('hidden');
@@ -531,7 +531,6 @@ function updateStats() {
     localStorage.setItem('trumpetStats', JSON.stringify({
         modeStats: gameState.modeStats,
         lastUpdated: now,
-        deviceID: getDeviceId(),
         playerName: "TODO"
     }));
 
@@ -541,12 +540,12 @@ function updateStats() {
 }
 
 function getDeviceId() {
-    let deviceID = localStorage.getItem('deviceID');
+    let deviceID = localStorage.getItem('trumpetDeviceID');
     console.log('Retrieved deviceID from localStorage:', deviceID);
     if (!deviceID) {
         console.log(deviceID);
         deviceID = crypto.randomUUID();
-        localStorage.setItem('deviceID', deviceID);
+        localStorage.setItem('trumpetDeviceID', deviceID);
     }
     return deviceID;
 }
@@ -556,7 +555,7 @@ async function syncCurrentLeaderboardStats() {
   const deviceId = getDeviceId();
   const playerName = "TODO";
 
-  const bucket = mode === 'multiple-choice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
+  const bucket = mode === 'multipleChoice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
   const docId = `${deviceId}-${mode}`;
   const docRef = leaderboardCollection.doc(docId);
 
@@ -565,6 +564,7 @@ async function syncCurrentLeaderboardStats() {
     await docRef.set({
       deviceId,
       playerName,
+      mode,
       bestStreak: bucket.streak,
       correct: bucket.correct,
       wrong: bucket.wrong,
@@ -577,21 +577,21 @@ async function syncCurrentLeaderboardStats() {
   const existing = snapshot.data();
   const updated = {
     playerName,
+    mode,
     bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
     correct: bucket.correct,
     wrong: bucket.wrong,
     winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
   };
-  
+
   await docRef.set(updated, { merge: true });
 }
 
 
-async function fetchLeaderboard(mode, inputType, metric, limit = 20) {
+async function fetchLeaderboard(mode, metric, limit = 20) {
   let query = leaderboardCollection
     .where('mode', '==', mode)
-    .where('inputType', '==', inputType)
     .orderBy(metric, 'desc')
     .limit(limit);
 
