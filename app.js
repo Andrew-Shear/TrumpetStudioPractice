@@ -2,9 +2,10 @@
 let gameState = {
     currentSong: null,
     currentAnswer: null,
-    streak: 0,
-    correctCount: 0,
-    wrongCount: 0,
+    modeStats: {
+        multipleChoice: { correct: 0, wrong: 0, streak: 0 },
+        text: { correct: 0, wrong: 0, streak: 0 }
+    },
     isPlaying: false,
     options: [],
     snippetTimeout: null,
@@ -38,6 +39,8 @@ const wrongCount = document.getElementById('wrongCount');
 // Constants
 const SNIPPET_DURATION = 20; // seconds
 
+
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     if (SONGS.length === 0) {
@@ -59,9 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saved) {
         try {
             const stats = JSON.parse(saved);
-            gameState.streak = stats.streak || 0;
-            gameState.correctCount = stats.correct || 0;
-            gameState.wrongCount = stats.wrong || 0;
+            gameState.modeStats = stats.modeStats || gameState.modeStats;
             updateStats();
         } catch (e) {
             console.log('Failed to load saved stats:', e);
@@ -93,7 +94,7 @@ modeToggle.addEventListener('click', () => {
         optionsContainer.classList.remove('hidden');
         textInputContainer.classList.add('hidden');
     }
-
+    updateStats();
     loadNewSong();
 });
 
@@ -219,13 +220,23 @@ function handleMultipleGuess(selectedOption) {
 function updateFeedbackAndStats(isCorrect) {
     if (isCorrect) {
         // Correct answer
-        gameState.streak++;
-        gameState.correctCount++;
+        if (gameState.inputMode === 'text') {
+            gameState.modeStats.text.streak++;
+            gameState.modeStats.text.correct++;
+        } else {
+            gameState.modeStats.multipleChoice.streak++;
+            gameState.modeStats.multipleChoice.correct++;
+        }
         showFeedback('correct', `Correct! ${gameState.currentAnswer}`);
     } else {
         // Wrong answer
-        gameState.streak = 0;
-        gameState.wrongCount++;
+        if (gameState.inputMode === 'text') {
+            gameState.modeStats.text.streak = 0;
+            gameState.modeStats.text.wrong++;
+        } else {
+            gameState.modeStats.multipleChoice.streak = 0;
+            gameState.modeStats.multipleChoice.wrong++;
+        }
         showFeedback('wrong', `Wrong! The answer was: ${gameState.currentAnswer}`);
     }
 
@@ -491,14 +502,28 @@ function hideFeedback() {
 
 // Update stats display
 function updateStats() {
-    streakCount.textContent = gameState.streak;
-    correctCount.textContent = gameState.correctCount;
-    wrongCount.textContent = gameState.wrongCount;
+    if (gameState.inputMode === 'text') {
+        streakCount.textContent = gameState.modeStats.text.streak;
+        correctCount.textContent = gameState.modeStats.text.correct;
+        wrongCount.textContent = gameState.modeStats.text.wrong;
+    } else {
+        streakCount.textContent = gameState.modeStats.multipleChoice.streak;
+        correctCount.textContent = gameState.modeStats.multipleChoice.correct;
+        wrongCount.textContent = gameState.modeStats.multipleChoice.wrong;
+    }
+
+    let deviceID = localStorage.getItem('deviceID');
+    if (!deviceID) {
+        deviceID = crypto.randomUUID();
+    }
+
+    const now = Date.now();
     
     // Save stats to localStorage
     localStorage.setItem('trumpetStats', JSON.stringify({
-        streak: gameState.streak,
-        correct: gameState.correctCount,
-        wrong: gameState.wrongCount
+        modeStats: gameState.modeStats,
+        lastUpdated: now,
+        deviceID: deviceID,
+        playerName: "TODO"
     }));
 }
