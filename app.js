@@ -39,7 +39,20 @@ const wrongCount = document.getElementById('wrongCount');
 // Constants
 const SNIPPET_DURATION = 20; // seconds
 
+const firebaseConfig = {
+    apiKey: "AIzaSyBEWyLkgqBpdFUQw4dG50RS0JyPKraoPCc",
+    authDomain: "trumpetstudiopractice.firebaseapp.com",
+    projectId: "trumpetstudiopractice",
+    storageBucket: "trumpetstudiopractice.firebasestorage.app",
+    messagingSenderId: "516087324416",
+    appId: "1:516087324416:web:c57eb2d339c9270ace1de5",
+    measurementId: "G-4WF3PR8SVG"
+};
 
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const leaderboardCollection = db.collection('leaderboards');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -512,18 +525,80 @@ function updateStats() {
         wrongCount.textContent = gameState.modeStats.multipleChoice.wrong;
     }
 
-    let deviceID = localStorage.getItem('deviceID');
-    if (!deviceID) {
-        deviceID = crypto.randomUUID();
-    }
-
     const now = Date.now();
     
     // Save stats to localStorage
     localStorage.setItem('trumpetStats', JSON.stringify({
         modeStats: gameState.modeStats,
         lastUpdated: now,
-        deviceID: deviceID,
+        deviceID: getDeviceId(),
         playerName: "TODO"
     }));
+
+    syncCurrentLeaderboardStats().catch((error) => {
+      console.error(error);
+    });
+}
+
+function getDeviceId() {
+    let deviceID = localStorage.getItem('deviceID');
+    console.log('Retrieved deviceID from localStorage:', deviceID);
+    if (!deviceID) {
+        console.log(deviceID);
+        deviceID = crypto.randomUUID();
+        localStorage.setItem('deviceID', deviceID);
+    }
+    return deviceID;
+}
+
+async function syncCurrentLeaderboardStats() {
+  const mode = gameState.inputMode;
+  const deviceId = getDeviceId();
+  const playerName = "TODO";
+
+  const bucket = mode === 'multiple-choice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
+  const docId = `${deviceId}-${mode}`;
+  const docRef = leaderboardCollection.doc(docId);
+
+  const snapshot = await docRef.get();
+  if (!snapshot.exists) {
+    await docRef.set({
+      deviceId,
+      playerName,
+      bestStreak: bucket.streak,
+      correct: bucket.correct,
+      wrong: bucket.wrong,
+      winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    return;
+  }
+
+  const existing = snapshot.data();
+  const updated = {
+    playerName,
+    bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
+    correct: bucket.correct,
+    wrong: bucket.wrong,
+    winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
+    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  
+  await docRef.set(updated, { merge: true });
+}
+
+
+async function fetchLeaderboard(mode, inputType, metric, limit = 20) {
+  let query = leaderboardCollection
+    .where('mode', '==', mode)
+    .where('inputType', '==', inputType)
+    .orderBy(metric, 'desc')
+    .limit(limit);
+
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc, index) => ({
+    rank: index + 1,
+    id: doc.id,
+    ...doc.data()
+  }));
 }
