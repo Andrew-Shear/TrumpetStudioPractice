@@ -52,7 +52,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const leaderboardCollection = db.collection('leaderboards');
+const multipleChoiceLeaderboard = db.collection('multiple-choice');
+const textLeaderboard = db.collection('text');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -541,7 +542,6 @@ function updateStats() {
 
 function getDeviceId() {
     let deviceID = localStorage.getItem('trumpetDeviceID');
-    console.log('Retrieved deviceID from localStorage:', deviceID);
     if (!deviceID) {
         console.log(deviceID);
         deviceID = crypto.randomUUID();
@@ -551,54 +551,60 @@ function getDeviceId() {
 }
 
 async function syncCurrentLeaderboardStats() {
-  const mode = gameState.inputMode;
-  const deviceId = getDeviceId();
-  const playerName = "TODO";
+    const mode = gameState.inputMode;
+    const deviceId = getDeviceId();
+    const playerName = "TODO";
 
-  const bucket = mode === 'multipleChoice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
-  const docId = `${deviceId}-${mode}`;
-  const docRef = leaderboardCollection.doc(docId);
+    const bucket = mode === 'multipleChoice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
+    const docId = `${deviceId}-${mode}`;
+    let docRef = null;
+    if (mode == "text") {
+        docRef = textLeaderboard.doc(docId);
+    } else {
+        docRef = multipleChoiceLeaderboard.doc(docId);
+    }
 
-  const snapshot = await docRef.get();
-  if (!snapshot.exists) {
-    await docRef.set({
-      deviceId,
-      playerName,
-      mode,
-      bestStreak: bucket.streak,
-      correct: bucket.correct,
-      wrong: bucket.wrong,
-      winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
-      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    return;
-  }
+    const snapshot = await docRef.get();
+    if (!snapshot.exists) {
+        await docRef.set({
+            deviceId,
+            playerName,
+            bestStreak: bucket.streak,
+            correct: bucket.correct,
+            wrong: bucket.wrong,
+            winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return;
+    }
 
-  const existing = snapshot.data();
-  const updated = {
-    playerName,
-    mode,
-    bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
-    correct: bucket.correct,
-    wrong: bucket.wrong,
-    winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
-    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-  };
+    const existing = snapshot.data();
+    const updated = {
+        playerName,
+        bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
+        correct: bucket.correct,
+        wrong: bucket.wrong,
+        winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
-  await docRef.set(updated, { merge: true });
+    await docRef.set(updated, { merge: true });
 }
 
 
 async function fetchLeaderboard(mode, metric, limit = 20) {
-  let query = leaderboardCollection
-    .where('mode', '==', mode)
-    .orderBy(metric, 'desc')
-    .limit(limit);
+    let docRef = null;
+    if (mode == "text") {
+        docRef = textLeaderboard.doc(docId);
+    } else {
+        docRef = multipleChoiceLeaderboard.doc(docId);
+    }
+    let query = docRef.orderBy(metric, 'desc').limit(limit);
 
-  const snapshot = await query.get();
-  return snapshot.docs.map((doc, index) => ({
-    rank: index + 1,
-    id: doc.id,
-    ...doc.data()
-  }));
+    const snapshot = await query.get();
+    return snapshot.docs.map((doc, index) => ({
+        rank: index + 1,
+        id: doc.id,
+        ...doc.data()
+    }));
 }
