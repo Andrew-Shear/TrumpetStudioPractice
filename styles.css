@@ -33,6 +33,7 @@ header {
 
 header h1 {
     flex: 1;
+    min-width: 0;
     font-size: 1.8rem;
     color: #e2e8f0;
 }
@@ -419,10 +420,6 @@ footer {
 .header-spacer {
     width: 40px;
     min-width: 40px;
-}
-.leaderboard-section {
-    text-align: center;
-    margin-bottom: 1.0rem;
 }
 
 .modal-overlay {
