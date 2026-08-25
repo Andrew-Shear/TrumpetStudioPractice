@@ -10,6 +10,7 @@
     <div class="container">
         <header>
             <h1>Trumpet Studio Practice Tool</h1>
+            <button id="leaderboardBtn" class="leaderboard-corner-btn">🏆</button>
         </header>
 
         <main>
@@ -65,6 +66,29 @@
                 <span class="wrong">Wrong: <span id="wrongCount">0</span></span>
             </div>
         </footer>
+    </div>
+
+    <div id="leaderboardModal" class="modal-overlay hidden">
+        <div class="modal-pane">
+            <div class="modal-header">
+                <h2>Leaderboard</h2>
+                <button id="closeLeaderboardBtn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-controls">
+                <div class="modal-tabs">
+                    <button class="tab-btn active" data-mode="multipleChoice">Multiple Choice</button>
+                    <button class="tab-btn" data-mode="text">Text Input</button>
+                </div>
+                <select id="metricSelect" class="metric-select">
+                    <option value="bestStreak">Best Streak</option>
+                    <option value="correct">Most Correct</option>
+                    <option value="winLossRatio">Win Rate</option>
+                </select>
+            </div>
+            <div id="leaderboardContent" class="leaderboard-content">
+                <p class="loading-text">Loading...</p>
+            </div>
+        </div>
     </div>
 
     <audio id="audioPlayer"></audio>

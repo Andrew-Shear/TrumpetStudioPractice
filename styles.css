@@ -26,6 +26,7 @@ body {
 header {
     text-align: center;
     margin-bottom: 2rem;
+    position: relative;
 }
 
 header h1 {
@@ -398,4 +399,174 @@ footer {
 
 .wrong {
     color: #f56565;
+}
+
+.leaderboard-corner-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #eee;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.leaderboard-section {
+    text-align: center;
+    margin-bottom: 1.0rem;
+}
+
+.leaderboard-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ccc;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    padding: 0.6rem 1.3rem;
+    font-size: 0.9rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.leaderboard-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-pane {
+    width: 90%;
+    max-width: 550px;
+    max-height: 80vh;
+    background: #1a1a2e;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    color: #e2e8f0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.modal-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #ccc;
+    padding: 0.4rem 0.9rem;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.metric-select {
+    padding: 0.4rem 0.8rem;
+    border-radius: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #eee;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.metric-select option {
+    background: #1a1a2e;
+    color: #eee;
+}
+
+.leaderboard-content {
+    overflow-y: auto;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 0.6rem 0.5rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+}
+
+.leaderboard-table th {
+    color: #aaa;
+    font-weight: 600;
+}
+
+.leaderboard-table td:nth-child(2) {
+    text-align: left;
+}
+
+.leaderboard-table tbody tr:first-child td {
+    color: #ffd700;
+    font-weight: 600;
+}
+
+.loading-text, .empty-text, .error-text {
+    text-align: center;
+    color: #aaa;
+    padding: 2rem 0;
 }

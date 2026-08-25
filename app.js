@@ -514,6 +514,8 @@ function hideFeedback() {
     nextBtn.classList.add('hidden');
 }
 
+let syncInProgress = null;
+
 // Update stats display
 function updateStats() {
     if (gameState.inputMode === 'text') {
@@ -527,84 +529,254 @@ function updateStats() {
     }
 
     const now = Date.now();
+    const cachedName = localStorage.getItem('trumpetPlayerName') || '';
     
     // Save stats to localStorage
     localStorage.setItem('trumpetStats', JSON.stringify({
         modeStats: gameState.modeStats,
         lastUpdated: now,
-        playerName: "TODO"
+        playerName: cachedName
     }));
 
-    syncCurrentLeaderboardStats().catch((error) => {
-      console.error(error);
-    });
+    queueSync();
 }
 
-function getDeviceId() {
-    let deviceID = localStorage.getItem('trumpetDeviceID');
-    if (!deviceID) {
-        console.log(deviceID);
-        deviceID = crypto.randomUUID();
-        localStorage.setItem('trumpetDeviceID', deviceID);
+function queueSync() {
+    // Chain onto whatever's currently running, so calls never overlap
+    syncInProgress = (syncInProgress || Promise.resolve())
+        .then(() => syncCurrentLeaderboardStats())
+        .catch((error) => console.error(error));
+    return syncInProgress;
+}
+
+
+// Local delta tracking — lets us compute "what's new since last sync"
+// per mode, so multiple devices can add to the same total instead of overwriting it.
+function getSyncState() {
+    try {
+        return JSON.parse(localStorage.getItem('trumpetSyncState')) || {};
+    } catch (e) {
+        return {};
     }
-    return deviceID;
+}
+
+function setSyncState(state) {
+    localStorage.setItem('trumpetSyncState', JSON.stringify(state));
+}
+
+// Check if a name is already in use in either leaderboard collection
+async function checkExistingStats(nameKey) {
+    const [mcSnap, textSnap] = await Promise.all([
+        multipleChoiceLeaderboard.doc(nameKey).get(),
+        textLeaderboard.doc(nameKey).get()
+    ]);
+    return {
+        multipleChoice: mcSnap.exists ? mcSnap.data() : null,
+        text: textSnap.exists ? textSnap.data() : null
+    };
+}
+
+// After confirming identity, pull cloud totals back into local state so the
+// on-screen counters match, and align syncState so the next sync only sends
+// the truly-new delta (not the whole cloud total again).
+function restoreLocalStatsFromCloud(existingStats) {
+    const syncState = getSyncState();
+
+    ['multipleChoice', 'text'].forEach((mode) => {
+        const cloudData = existingStats[mode];
+        if (!cloudData) return;
+
+        gameState.modeStats[mode].correct = cloudData.correct || 0;
+        gameState.modeStats[mode].wrong = cloudData.wrong || 0;
+        // Streak isn't stored directly (only bestStreak is), so we can't
+        // recover the exact live streak — reset to 0 rather than guess.
+        gameState.modeStats[mode].streak = 0;
+
+        syncState[mode] = { correct: cloudData.correct || 0, wrong: cloudData.wrong || 0 };
+    });
+
+    setSyncState(syncState);
+    updateStats();
+}
+
+
+let playerNameResolution = null;
+async function resolvePlayerName() {
+    const cached = localStorage.getItem('trumpetPlayerName');
+    if (cached) return cached;
+
+    // If a resolution is already in progress, wait for that one instead of prompting again
+    if (playerNameResolution) return playerNameResolution;
+
+    playerNameResolution = (async () => {
+        let name = null;
+        while (!name) {
+            const input = prompt('Enter your name for the leaderboard:', '');
+            const candidate = (input || '').trim().slice(0, 30);
+
+            if (!candidate) {
+                name = 'Anonymous';
+                break;
+            }
+
+            const nameKey = candidate.toLowerCase();
+            let existingStats = { multipleChoice: null, text: null };
+            try {
+                existingStats = await checkExistingStats(nameKey);
+            } catch (e) {
+                console.error('Name check failed:', e);
+            }
+
+            const existing = existingStats.multipleChoice || existingStats.text;
+
+            if (existing) {
+                const isYou = confirm(
+                    `Found existing stats for "${existing.playerName}" ` +
+                    `(MC — Correct: ${existingStats.multipleChoice?.correct ?? 0}, Wrong: ${existingStats.multipleChoice?.wrong ?? 0} | ` +
+                    `Text — Correct: ${existingStats.text?.correct ?? 0}, Wrong: ${existingStats.text?.wrong ?? 0}). Is this you?`
+                );
+                if (isYou) {
+                    name = candidate;
+                    restoreLocalStatsFromCloud(existingStats);
+                }
+            } else {
+                name = candidate;
+            }
+        }
+
+        localStorage.setItem('trumpetPlayerName', name);
+        return name;
+    })();
+
+    const resolved = await playerNameResolution;
+    playerNameResolution = null; // clear so future logic (e.g. a "change name" button) can re-resolve if ever needed
+    return resolved;
 }
 
 async function syncCurrentLeaderboardStats() {
     const mode = gameState.inputMode;
-    const deviceId = getDeviceId();
-    const playerName = "TODO";
-
     const bucket = mode === 'multipleChoice' ? gameState.modeStats.multipleChoice : gameState.modeStats.text;
-    const docId = `${deviceId}-${mode}`;
-    let docRef = null;
-    if (mode == "text") {
-        docRef = textLeaderboard.doc(docId);
-    } else {
-        docRef = multipleChoiceLeaderboard.doc(docId);
-    }
 
-    const snapshot = await docRef.get();
-    if (!snapshot.exists) {
-        await docRef.set({
-            deviceId,
+    const playerName = await resolvePlayerName();
+    const nameKey = playerName.toLowerCase();
+    const docRef = (mode === 'text' ? textLeaderboard : multipleChoiceLeaderboard).doc(nameKey);
+
+    // Only count what's NEW since the last successful sync from this device,
+    // so we add to the shared total instead of overwriting it.
+    const syncState = getSyncState();
+    const last = syncState[mode] || { correct: 0, wrong: 0 };
+    const deltaCorrect = Math.max(0, bucket.correct - last.correct);
+    const deltaWrong = Math.max(0, bucket.wrong - last.wrong);
+
+    await db.runTransaction(async (tx) => {
+        const snap = await tx.get(docRef);
+        const existing = snap.exists ? snap.data() : { correct: 0, wrong: 0, bestStreak: 0 };
+
+        const newCorrect = (existing.correct || 0) + deltaCorrect;
+        const newWrong = (existing.wrong || 0) + deltaWrong;
+
+        tx.set(docRef, {
             playerName,
-            bestStreak: bucket.streak,
-            correct: bucket.correct,
-            wrong: bucket.wrong,
-            winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
+            correct: newCorrect,
+            wrong: newWrong,
+            bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
+            winLossRatio: newCorrect / Math.max(1, newCorrect + newWrong),
             lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        return;
-    }
+        }, { merge: true });
+    });
 
-    const existing = snapshot.data();
-    const updated = {
-        playerName,
-        bestStreak: Math.max(existing.bestStreak || 0, bucket.streak),
-        correct: bucket.correct,
-        wrong: bucket.wrong,
-        winLossRatio: bucket.correct / Math.max(1, bucket.correct + bucket.wrong),
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    await docRef.set(updated, { merge: true });
+    // Remember what we just synced so the next call only sends the new delta
+    syncState[mode] = { correct: bucket.correct, wrong: bucket.wrong };
+    setSyncState(syncState);
 }
 
-
 async function fetchLeaderboard(mode, metric, limit = 20) {
-    let docRef = null;
-    if (mode == "text") {
-        docRef = textLeaderboard.doc(docId);
-    } else {
-        docRef = multipleChoiceLeaderboard.doc(docId);
-    }
-    let query = docRef.orderBy(metric, 'desc').limit(limit);
-
+    const collectionRef = mode === 'text' ? textLeaderboard : multipleChoiceLeaderboard;
+    const query = collectionRef.orderBy(metric, 'desc').limit(limit);
     const snapshot = await query.get();
     return snapshot.docs.map((doc, index) => ({
         rank: index + 1,
         id: doc.id,
         ...doc.data()
     }));
+}
+
+// Leaderboard Modal
+const leaderboardBtn = document.getElementById('leaderboardBtn');
+const leaderboardModal = document.getElementById('leaderboardModal');
+const closeLeaderboardBtn = document.getElementById('closeLeaderboardBtn');
+const leaderboardContent = document.getElementById('leaderboardContent');
+const metricSelect = document.getElementById('metricSelect');
+const tabBtns = document.querySelectorAll('.tab-btn');
+
+let currentLeaderboardMode = 'multipleChoice';
+
+leaderboardBtn.addEventListener('click', () => {
+    leaderboardModal.classList.remove('hidden');
+    renderLeaderboard();
+});
+
+closeLeaderboardBtn.addEventListener('click', () => {
+    leaderboardModal.classList.add('hidden');
+});
+
+leaderboardModal.addEventListener('click', (e) => {
+    if (e.target === leaderboardModal) {
+        leaderboardModal.classList.add('hidden');
+    }
+});
+
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLeaderboardMode = btn.dataset.mode;
+        renderLeaderboard();
+    });
+});
+
+metricSelect.addEventListener('change', renderLeaderboard);
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+async function renderLeaderboard() {
+    leaderboardContent.innerHTML = '<p class="loading-text">Loading...</p>';
+    try {
+        const metric = metricSelect.value;
+        const entries = await fetchLeaderboard(currentLeaderboardMode, metric, 20);
+
+        if (entries.length === 0) {
+            leaderboardContent.innerHTML = '<p class="empty-text">No scores yet. Be the first!</p>';
+            return;
+        }
+
+        const rows = entries.map(e => `
+            <tr>
+                <td>${e.rank}</td>
+                <td>${escapeHtml(e.playerName || 'Anonymous')}</td>
+                <td>${e.bestStreak ?? 0}</td>
+                <td>${e.correct ?? 0}</td>
+                <td>${e.wrong ?? 0}</td>
+                <td>${Math.round((e.winLossRatio ?? 0) * 100)}%</td>
+            </tr>
+        `).join('');
+
+        leaderboardContent.innerHTML = `
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Name</th><th>Streak</th><th>Correct</th><th>Wrong</th><th>Win Rate</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    } catch (err) {
+        console.error('Failed to load leaderboard:', err);
+        leaderboardContent.innerHTML = '<p class="error-text">Failed to load leaderboard. Please try again.</p>';
+    }
 }
