@@ -32,6 +32,7 @@ header {
 header h1 {
     font-size: 1.8rem;
     color: #e2e8f0;
+    padding-right: 3rem;
 }
 
 .audio-section {
