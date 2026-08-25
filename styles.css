@@ -24,17 +24,18 @@ body {
 }
 
 header {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 2rem;
-    position: relative;
+    text-align: center;
 }
 
 header h1 {
+    flex: 1;
     font-size: 1.8rem;
     color: #e2e8f0;
-    padding-right: 3rem;
 }
-
 .audio-section {
     display: flex;
     flex-direction: column;
@@ -403,39 +404,27 @@ footer {
 }
 
 .leaderboard-corner-btn {
-    position: absolute;
-    top: 0;
-    right: 0;
+    /* remove position: absolute, top, left — flex handles placement now */
     background: rgba(255, 255, 255, 0.08);
     border: 2px solid rgba(255, 255, 255, 0.2);
     color: #eee;
     width: 40px;
     height: 40px;
+    min-width: 40px; /* prevents flex from shrinking the circle on narrow screens */
     border-radius: 50%;
     font-size: 1.2rem;
     cursor: pointer;
 }
 
+.header-spacer {
+    width: 40px;
+    min-width: 40px;
+}
 .leaderboard-section {
     text-align: center;
     margin-bottom: 1.0rem;
 }
 
-.leaderboard-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ccc;
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    padding: 0.6rem 1.3rem;
-    font-size: 0.9rem;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.leaderboard-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-}
 .modal-overlay {
     position: fixed;
     top: 0;
