@@ -11,6 +11,7 @@ https://andrew-shear.github.io/TrumpetStudioPractice/
 - Skip button to reveal answer and move on
 - Streak counter and correct/wrong tracking that are saved across refreshes
 - Endless practice loop
+- Leaderboard to compare results to others
 
 ## How to Use
 
