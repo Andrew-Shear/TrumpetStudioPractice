@@ -77,10 +77,32 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const stats = JSON.parse(saved);
             gameState.modeStats = stats.modeStats || gameState.modeStats;
+            if (!Object.hasOwn(stats, 'lastUpdated')) {
+                // edge case where a user was on the old system - reset stats
+                gameState.modeStats.text.correct = 0;
+                gameState.modeStats.text.wrong = 0;
+                gameState.modeStats.text.streak = 0;
+                gameState.modeStats.multipleChoice.correct = 0;
+                gameState.modeStats.multipleChoice.wrong = 0;
+                gameState.modeStats.multipleChoice.streak = 0;
+            }
             updateStats();
+
         } catch (e) {
             console.log('Failed to load saved stats:', e);
         }
+    }
+
+    const cachedName = localStorage.getItem('trumpetPlayerName');
+    if (cachedName) {
+        const nameKey = cachedName.toLowerCase();
+        checkExistingStats(nameKey)
+            .then((existingStats) => {
+                if (existingStats.multipleChoice || existingStats.text) {
+                    restoreLocalStatsFromCloud(existingStats);
+                }
+            })
+            .catch((err) => console.error('Failed to load cloud stats on startup:', err));
     }
     
     loadNewSong();
