@@ -2,129 +2,121 @@
 const SONGS = [
     {
         id: "0",
-        title: "Milestones",
-        performer: "Booker Little",
-        composer: "Miles Davis",
-        filename: "milestones.mp3"
+        title: "Vocalise",
+        performer: "Ray Mase",
+        composer: "Maurice Ravel",
+        filename: "vocalise.mp3"
     },
 
     {
         id: "1",
-        title: "Trumpet Concerto",
-        performer: "Phil Smith",
-        composer: "Alexander Arutunian",
-        filename: "trumpet-concerto.mp3"
+        title: "Trumpet Sonata I. Allegro Appassionato",
+        performer: "Scott Thornburg",
+        composer: "Karl Pilss",
+        filename: "trumpet-sonata-i.mp3"
     },
 
     {
         id: "2",
-        title: "Oblivion",
-        performer: "Lucienne Renaudin Vary",
-        composer: "Astor Piazzolla",
-        filename: "oblivion.mp3"
+        title: "Trumpet Sonata II. Adagio, molto cantabile",
+        performer: "Scott Thornburg",
+        composer: "Karl Pilss",
+        filename: "trumpet-sonata-ii.mp3"
     },
 
     {
         id: "3",
-        title: "Fanfare Liturgiques III. Apocalypse (Scherzo)",
-        performer: "Brass of the Royal Concertgebouw Orchestra",
-        composer: "Henri Tomasi",
-        filename: "fanfares-liturgiques-3.mp3"
+        title: "Trumpet Sonata III. Allegro Agitato",
+        performer: "Scott Thornburg",
+        composer: "Karl Pilss",
+        filename: "trumpet-sonata-iii.mp3"
     },
 
     {
         id: "4",
-        title: "Fanfare Liturgiques IV. Procession du Vendredi-Saint",
-        performer: "Brass of the Royal Concertgebouw Orchestra",
-        composer: "Henri Tomasi",
-        filename: "fanfares-liturgiques-4.mp3"
+        title: "The Sidewinder",
+        performer: "Lee Morgan",
+        composer: "Lee Morgan",
+        filename: "the-sidewinder.mp3"
     },
 
     {
         id: "5",
-        title: "Placid Mobile",
-        performer: "Andy Kozar",
-        composer: "Harrison Birtwistle",
-        filename: "placid.mp3"
+        title: "Saro",
+        performer: "The Westerlies",
+        composer: "The Westerlies",
+        filename: "saro.mp3"
     },
 
     {
         id: "6",
-        title: "You and the Night and the Music",
-        performer: "Freddie Hubbard",
-        composer: "Arthur Schwartz",
-        filename: "you-and-the-night.mp3"
+        title: "Concerto for Trumpet I. Allegro con spirito",
+        performer: "Tine Helseth",
+        composer: "Johann Hummel",
+        filename: "hummel-i.mp3"
     },
 
     {
         id: "7",
-        title: "Morceau de Concert",
-        performer: "Reinhold Frederich ",
-        composer: "Jean Pennequin",
-        filename: "morceau.mp3"
+        title: "Concerto for Trumpet II. Andante",
+        performer: "Tine Helseth",
+        composer: "Johann Hummel",
+        filename: "hummel-ii.mp3"
     },
 
     {
         id: "8",
-        title: "Post Cards I.",
-        performer: "Kevin Cobb",
-        composer: "Anthony Plog",
-        filename: "postcards-1.mp3"
+        title: "Concerto for Trumpet III. Rondo",
+        performer: "Tine Helseth",
+        composer: "Johann Hummel",
+        filename: "hummel-iii.mp3"
     },
 
     {
         id: "9",
-        title: "Post Cards II.",
-        performer: "Kevin Cobb",
-        composer: "Anthony Plog",
-        filename: "postcards-2.mp3"
+        title: "Georgia On My Mind",
+        performer: "Doc Severinsen",
+        composer: "Hoagie Carmichael",
+        filename: "georgia.mp3"
     },
 
     {
         id: "10",
-        title: "Post Cards III.",
-        performer: "Kevin Cobb",
-        composer: "Anthony Plog",
-        filename: "postcards-3.mp3"
+        title: "Litany for a ruined chapel between sheep and shore III. Presto vigoroso",
+        performer: "Clement Saunier",
+        composer: "Peter Maxwell Davies",
+        filename: "litany.mp3"
     },
 
     {
         id: "11",
-        title: "Fight On",
-        performer: "The Westerlies",
-        composer: "Riley Mulherkar",
-        filename: "fight.mp3"
+        title: "Parable XIV",
+        performer: "Kevin Cobb",
+        composer: "Vincent Persichetti",
+        filename: "parable.mp3"
     },
 
     {
         id: "12",
-        title: "Sonatine I. Prelude",
-        performer: "Alison Balsam",
-        composer: "Jean Francaix",
-        filename: "sonatine-1.mp3"
+        title: "Springsville",
+        performer: "Miles Davis",
+        composer: "Arr. Gil Evans",
+        filename: "springsville.mp3"
     },
 
     {
         id: "13",
-        title: "Sonatine II. Sarabande",
-        performer: "Alison Balsam",
-        composer: "Jean Francaix",
-        filename: "sonatine-2.mp3"
+        title: "Green Chimneys",
+        performer: "Wynton Marsalis",
+        composer: "Thelonious Monk",
+        filename: "green-chimneys.mp3"
     },
 
     {
         id: "14",
-        title: "Sonatine III. Sarabande-Cadenza",
-        performer: "Alison Balsam",
-        composer: "Jean Francaix",
-        filename: "sonatine-2-c.mp3"
-    },
-
-    {
-        id: "15",
-        title: "Sonatine IV. Gigue",
-        performer: "Alison Balsam",
-        composer: "Jean Francaix",
-        filename: "sonatine-3.mp3"
+        title: "Cantabile et Scherzetto",
+        performer: "Reinhold Frederich",
+        composer: "Phillipe Gaubert",
+        filename: "cantabile.mp3"
     }
 ];

@@ -319,7 +319,7 @@ function loadNewSong() {
     
     // Log when audio is ready
     audioPlayer.addEventListener('canplaythrough', () => {
-        console.log('Audio ready:', gameState.currentSong.filename, 'duration:', audioPlayer.duration);
+        console.log('Audio ready, duration:', audioPlayer.duration);
     }, { once: true });
     
     // Handle audio errors
